@@ -481,7 +481,7 @@ function displayChatHistory() {
 }
 
 // OpenAI API Integration
-const OPENAI_API_KEY = 'YOUR_API_KEY_HERE'; // Replace with your key
+const OPENAI_API_KEY = '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'; // Replace with your key
 async function getOpenAIResponse(prompt) {
     if (!navigator.onLine) {
         const lastTone = conversationMemory.userVoiceProfile.tone;
