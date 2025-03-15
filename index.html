@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Self - The Digital Diary</title>
     <style>
+        /* Global Styles */
         * {
             margin: 0;
             padding: 0;
@@ -22,6 +23,7 @@
             align-items: center;
         }
 
+        /* Intro Screen */
         #intro-screen {
             position: absolute;
             top: 0;
@@ -47,13 +49,6 @@
             font-family: 'Dancing Script', cursive;
             font-size: 2.5rem;
             color: #e0e0e0;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.8; }
-            50% { opacity: 1; }
-            100% { opacity: 0.8; }
         }
 
         #tap-to-begin {
@@ -72,6 +67,7 @@
             background: #555;
         }
 
+        /* Options Page */
         #options-page {
             position: absolute;
             top: 0;
@@ -133,6 +129,7 @@
             background: #0056b3;
         }
 
+        /* Main Container */
         #main-container {
             width: 100%;
             max-width: 90vw;
@@ -142,21 +139,23 @@
             border-radius: 15px;
             overflow: hidden;
             display: none;
-            flex-direction: row;
         }
 
+        /* Sidebar */
         #sidebar {
             width: 250px;
             height: 100%;
             background: #2a2a2a;
+            top: 0;
             transition: left 0.3s ease;
             z-index: 5;
             padding: 20px;
-            position: absolute;
+            position: relative;
         }
 
         @media (max-width: 768px) {
             #sidebar {
+                position: absolute;
                 left: -250px;
             }
             #sidebar.open {
@@ -201,6 +200,7 @@
             display: none;
         }
 
+        /* Chat Interface */
         #chat-container {
             flex-grow: 1;
             height: 100%;
@@ -215,9 +215,10 @@
             flex-grow: 1;
             overflow-y: auto;
             padding: 15px;
-            background: #d3d3d3; /* Light gray per blueprint */
+            background: #2a2a2a; /* Darker background for chat display */
             border-radius: 10px;
             margin-bottom: 20px;
+            color: #e0e0e0; /* Light text color for readability */
             width: 100%;
         }
 
@@ -226,11 +227,10 @@
             padding: 10px 15px;
             border-radius: 15px;
             max-width: 80%;
-            word-wrap: break-word;
         }
 
         .user-message {
-            background: #007bff; /* Blue per blueprint */
+            background: #007bff;
             color: #fff;
             align-self: flex-end;
             margin-left: auto;
@@ -238,8 +238,8 @@
         }
 
         .diary-message {
-            background: #666; /* Gray per blueprint */
-            color: #fff; /* White for contrast */
+            background: #444;
+            color: #e0e0e0;
             align-self: flex-start;
             font-family: 'Dancing Script', cursive;
             font-style: italic;
@@ -283,6 +283,7 @@
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
     <!-- Intro Screen -->
@@ -368,17 +369,29 @@
         let lastCheck = localStorage.getItem('lastCheck') || Date.now();
 
         // IP Detection
-        fetch('https://api.ipify.org?format=json')
-            .then(res => res.json())
-            .then(data => {
+        async function detectIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
                 userIP = data.ip;
-                localStorage.setItem('userIP', userIP);
-                checkSubscriptionStatus();
-            })
-            .catch(() => {
-                userIP = '192.168.1.100';
-                checkSubscriptionStatus();
-            });
+            } catch (error) {
+                userIP = '192.168.1.100'; // Fallback for offline mode
+            }
+            localStorage.setItem('userIP', userIP);
+            checkSubscriptionStatus();
+        }
+
+        detectIP();
+
+        // Encryption Functions
+        function encryptData(data, pin) {
+            return CryptoJS.AES.encrypt(data, pin).toString();
+        }
+
+        function decryptData(encryptedData, pin) {
+            const bytes = CryptoJS.AES.decrypt(encryptedData, pin);
+            return bytes.toString(CryptoJS.enc.Utf8);
+        }
 
         // Initial Load
         introScreen.classList.remove('hidden');
@@ -510,7 +523,7 @@
         }
 
         // OpenAI API Integration
-        const OPENAI_API_KEY = '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'; // Replace with your key
+        const OPENAI_API_KEY = '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';
 
         async function getOpenAIResponse(prompt) {
             if (!navigator.onLine) {
@@ -537,12 +550,12 @@
                     })
                 });
 
-                if (!response.ok) throw new Error('API call tanked');
+                if (!response.ok) throw new Error('API call failed');
                 const data = await response.json();
                 return data.choices[0].message.content.trim();
             } catch (error) {
                 console.error('API Error:', error);
-                return "Connection’s fucked—let’s roll local. What’s up?";
+                return "Connection’s down—let’s roll local. What’s up?";
             }
         }
 
@@ -553,7 +566,8 @@
                 if (!isSubscribed && !adminBypass && chatHistory[currentTab]?.length > 3) {
                     setTimeout(() => {
                         addMessage("You into this? $1/month keeps it flowing!");
-                        addMessage("Tap: [Stripe Link Placeholder]");
+                        addMessage("Tap to subscribe: [Stripe Link Placeholder]");
+                        sendBtn.addEventListener('click', redirectToStripe, { once: true });
                     }, 1000);
                 } else {
                     const aiResponse = await getOpenAIResponse(userText);
