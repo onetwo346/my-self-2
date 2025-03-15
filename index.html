@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Self - The Digital Diary</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Intro Screen -->
+    <div id="intro-screen">
+        <h1 id="intro-text">My Self - I AM the Digital Diary And a Reflection of Your Self</h1>
+        <button id="tap-to-begin">Tap to Begin</button>
+    </div>
+
+    <!-- Options Page -->
+    <div id="options-page" class="hidden">
+        <button id="options-back-top">Back</button>
+        <h2>Welcome to My Self</h2>
+        <input type="text" id="name-input" placeholder="What’s your name?">
+        <input type="text" id="intro-input" placeholder="Tell me about yourself">
+        <input type="text" id="pin-input" placeholder="Set a PIN for encryption">
+        <input type="text" id="passcode-input" placeholder="Enter passcode (if returning)">
+        <button id="options-submit" class="options-btn">Enter Chat</button>
+        <button id="options-back" class="options-btn">Back</button>
+    </div>
+
+    <!-- Main Container -->
+    <div id="main-container">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <ul id="chat-history-list"></ul>
+            <div id="map-placeholder">
+                <p>OpenStreetMap Placeholder<br>“You loved that diner here!”</p>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div id="chat-container" class="hidden">
+            <button id="back-btn">Back</button>
+            <div id="chat-display"></div>
+            <div id="chat-input">
+                <input type="text" id="input-field" placeholder="Tell me something...">
+                <button id="send-btn">Send</button>
+                <button id="mic-btn">🎙️</button>
+                <button id="camera-btn">📷</button>
+                <button id="map-btn">🗺️</button>
+                <button id="voice-toggle-btn">🔇</button>
+                <select id="voice-options" style="display: none;">
+                    <option value="UK English Male">UK English Male</option>
+                    <option value="US English Female">US English Female</option>
+                    <option value="Spanish Male">Spanish Male</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
