@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Self - The Digital Diary</title>
     <style>
+        /* Global Styles */
         * {
             margin: 0;
             padding: 0;
@@ -22,6 +23,7 @@
             align-items: center;
         }
 
+        /* Intro Screen */
         #intro-screen {
             position: absolute;
             top: 0;
@@ -47,13 +49,6 @@
             font-family: 'Dancing Script', cursive;
             font-size: 2.5rem;
             color: #e0e0e0;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.8; }
-            50% { opacity: 1; }
-            100% { opacity: 0.8; }
         }
 
         #tap-to-begin {
@@ -72,6 +67,7 @@
             background: #555;
         }
 
+        /* Options Page */
         #options-page {
             position: absolute;
             top: 0;
@@ -133,6 +129,7 @@
             background: #0056b3;
         }
 
+        /* Main Container */
         #main-container {
             width: 100%;
             max-width: 90vw;
@@ -142,21 +139,23 @@
             border-radius: 15px;
             overflow: hidden;
             display: none;
-            display: flex;
         }
 
+        /* Sidebar */
         #sidebar {
             width: 250px;
             height: 100%;
             background: #2a2a2a;
+            top: 0;
             transition: left 0.3s ease;
             z-index: 5;
             padding: 20px;
-            position: absolute;
+            position: relative;
         }
 
         @media (max-width: 768px) {
             #sidebar {
+                position: absolute;
                 left: -250px;
             }
             #sidebar.open {
@@ -201,6 +200,7 @@
             display: none;
         }
 
+        /* Chat Interface */
         #chat-container {
             flex-grow: 1;
             height: 100%;
@@ -227,7 +227,6 @@
             padding: 10px 15px;
             border-radius: 15px;
             max-width: 80%;
-            word-wrap: break-word;
         }
 
         .user-message {
@@ -282,23 +281,18 @@
             padding: 5px 15px;
             font-size: 0.9rem;
         }
-
-        #settings-content {
-            display: none;
-            padding: 20px;
-            background: #333;
-            border-radius: 5px;
-            color: #e0e0e0;
-        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
+    <!-- Intro Screen -->
     <div id="intro-screen">
-        <h1 id="intro-text">My Self - The Digital Diary Reflection of Your Self</h1>
+        <h1 id="intro-text">My Self - I AM the Digital Diary And a Reflection of Your Self</h1>
         <button id="tap-to-begin">Tap to Begin</button>
     </div>
 
+    <!-- Options Page -->
     <div id="options-page" class="hidden">
         <button id="options-back-top">Back</button>
         <h2>Welcome to My Self</h2>
@@ -310,7 +304,9 @@
         <button id="options-back" class="options-btn">Back</button>
     </div>
 
+    <!-- Main Container -->
     <div id="main-container">
+        <!-- Sidebar -->
         <div id="sidebar">
             <ul>
                 <li id="new-tap">New Tap</li>
@@ -319,15 +315,11 @@
                 <li id="settings">Settings</li>
             </ul>
             <div id="map-placeholder">
-                <iframe id="map-iframe" style="width:100%;height:100%;border:none;" src="data:text/html,<p>Offline OpenStreetMap Cached</p>"></iframe>
-            </div>
-            <div id="settings-content">
-                <p>Voice: <button id="voice-toggle">On</button></p>
-                <p>Passcode: <span id="passcode-display"></span></p>
-                <p>Subscription: <span id="sub-status"></span></p>
+                <p>OpenStreetMap Placeholder<br>“You loved that diner here!”</p>
             </div>
         </div>
 
+        <!-- Chat Interface -->
         <div id="chat-container" class="hidden">
             <button id="back-btn">Back</button>
             <div id="chat-display"></div>
@@ -362,12 +354,10 @@
         const backBtn = document.getElementById('back-btn');
         const mapTab = document.getElementById('maps-tab');
         const mapPlaceholder = document.getElementById('map-placeholder');
-        const settingsTab = document.getElementById('settings');
-        const settingsContent = document.getElementById('settings-content');
         const mainContainer = document.getElementById('main-container');
 
         // State
-        let userIP = localStorage.getItem('userIP') || '';
+        let userIP = '';
         let userName = localStorage.getItem('userName') || '';
         let userIntro = localStorage.getItem('userIntro') || '';
         let userPin = localStorage.getItem('userPin') || '';
@@ -376,34 +366,31 @@
         let adminBypass = false;
         let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || {};
         let currentTab = 'new';
-        let lastCheck = parseInt(localStorage.getItem('lastCheck')) || Date.now();
-
-        // Simulated AES-256 Encryption (requires crypto-js for real impl)
-        function encryptData(data, key) {
-            return btoa(data + key); // Placeholder encryption
-        }
-
-        function decryptData(data, key) {
-            return atob(data).replace(key, ''); // Placeholder decryption
-        }
+        let lastCheck = localStorage.getItem('lastCheck') || Date.now();
 
         // IP Detection
-        if (!userIP) {
-            fetch('https://api.ipify.org?format=json')
-                .then(res => res.json())
-                .then(data => {
-                    userIP = data.ip;
-                    localStorage.setItem('userIP', encryptData(userIP, userPin || 'default'));
-                    checkSubscriptionStatus();
-                })
-                .catch(() => {
-                    userIP = '192.168.1.100';
-                    localStorage.setItem('userIP', encryptData(userIP, userPin || 'default'));
-                    checkSubscriptionStatus();
-                });
-        } else {
-            userIP = decryptData(userIP, userPin || 'default');
+        async function detectIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                userIP = data.ip;
+            } catch (error) {
+                userIP = '192.168.1.100'; // Fallback for offline mode
+            }
+            localStorage.setItem('userIP', userIP);
             checkSubscriptionStatus();
+        }
+
+        detectIP();
+
+        // Encryption Functions
+        function encryptData(data, pin) {
+            return CryptoJS.AES.encrypt(data, pin).toString();
+        }
+
+        function decryptData(encryptedData, pin) {
+            const bytes = CryptoJS.AES.decrypt(encryptedData, pin);
+            return bytes.toString(CryptoJS.enc.Utf8);
         }
 
         // Initial Load
@@ -432,50 +419,38 @@
 
         // Options Page Logic
         optionsSubmit.addEventListener('click', () => {
-            const enteredName = nameInput.value.trim();
-            const enteredIntro = introInput.value.trim();
-            const enteredPin = pinInput.value.trim();
+            userName = nameInput.value.trim();
+            userIntro = introInput.value.trim();
+            userPin = pinInput.value.trim();
             const enteredPasscode = passcodeInput.value.trim();
 
-            if (!enteredName) {
+            if (!userName) {
                 alert('Please enter your name!');
                 return;
             }
 
             if (enteredPasscode === 'guru' || enteredPasscode === 'ancient one') {
                 adminBypass = true;
-                userName = 'Kofi Fosu';
-                userIntro = 'Creator of My Self';
-                userPin = enteredPin || 'default';
-                localStorage.setItem('userName', encryptData(userName, userPin));
-                localStorage.setItem('userIntro', encryptData(userIntro, userPin));
-                localStorage.setItem('userPin', userPin);
                 optionsPage.classList.add('hidden');
                 mainContainer.style.display = 'flex';
                 chatContainer.classList.remove('hidden');
-                addMessage("Admin access granted, Kofi Fosu. What’s on your mind?");
+                addMessage("Admin access on, Kofi Fosu. What’s good?");
             } else if (userPasscode && enteredPasscode !== userPasscode) {
-                alert('Incorrect passcode!');
-                return;
-            } else if (!userPasscode && enteredPasscode && localStorage.getItem('userIP') !== encryptData(userIP, enteredPin || 'default')) {
-                alert('Passcode mismatch or new device—verify your identity!');
+                alert('Wrong passcode, fam!');
                 return;
             } else {
-                userName = enteredName;
-                userIntro = enteredIntro;
-                userPin = enteredPin || 'default';
-                localStorage.setItem('userName', encryptData(userName, userPin));
-                localStorage.setItem('userIntro', encryptData(userIntro, userPin));
+                localStorage.setItem('userName', userName);
+                localStorage.setItem('userIntro', userIntro);
                 localStorage.setItem('userPin', userPin);
                 if (!userPasscode && isSubscribed) {
                     userPasscode = `X${Math.random().toString(36).slice(2, 5).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
                     localStorage.setItem('userPasscode', userPasscode);
-                    addMessage(`Your passcode for all devices: ${userPasscode}. Save it!`);
+                    addMessage(`Passcode for all your devices: ${userPasscode}. Lock it down!`);
                 }
                 optionsPage.classList.add('hidden');
                 mainContainer.style.display = 'flex';
                 chatContainer.classList.remove('hidden');
-                addMessage(`Hey ${userName}, I’m My Self—your digital reflection. What’s up?`);
+                addMessage(`Yo ${userName}, I’m My Self—your digital echo. What’s dropping?`);
             }
         });
 
@@ -484,12 +459,20 @@
             optionsPage.classList.add('hidden');
             introScreen.classList.remove('hidden');
             mainContainer.style.display = 'none';
+            nameInput.value = '';
+            introInput.value = '';
+            pinInput.value = '';
+            passcodeInput.value = '';
         });
 
         optionsBackTop.addEventListener('click', () => {
             optionsPage.classList.add('hidden');
             introScreen.classList.remove('hidden');
             mainContainer.style.display = 'none';
+            nameInput.value = '';
+            introInput.value = '';
+            pinInput.value = '';
+            passcodeInput.value = '';
         });
 
         backBtn.addEventListener('click', () => {
@@ -526,32 +509,25 @@
         }
 
         // Chat Logic
-        function addMessage(text, isUser = false, media = null) {
+        function addMessage(text, isUser = false) {
             const message = document.createElement('div');
             message.classList.add('message');
             message.classList.add(isUser ? 'user-message' : 'diary-message');
             message.textContent = text;
-            if (media) {
-                const mediaElement = document.createElement(media.type === 'image' ? 'img' : 'video');
-                mediaElement.src = media.data;
-                mediaElement.style.maxWidth = '100%';
-                mediaElement.style.borderRadius = '10px';
-                message.appendChild(mediaElement);
-            }
             chatDisplay.appendChild(message);
             chatDisplay.scrollTop = chatDisplay.scrollHeight;
 
             if (!chatHistory[currentTab]) chatHistory[currentTab] = [];
-            chatHistory[currentTab].push({ text, isUser, media });
+            chatHistory[currentTab].push({ text, isUser });
             localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
         }
 
         // OpenAI API Integration
-        const OPENAI_API_KEY = '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'; // Replace with your key
+        const OPENAI_API_KEY = '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';
 
         async function getOpenAIResponse(prompt) {
             if (!navigator.onLine) {
-                return "I’m offline but here. What’s on your mind?";
+                return "Offline, but I got you. What’s hitting you today?";
             }
 
             try {
@@ -565,7 +541,7 @@
                         model: 'gpt-3.5-turbo',
                         messages: [{
                             role: 'system',
-                            content: `I’m My Self, your digital diary with soul. I know you from: ${userIntro}. Past chats: ${JSON.stringify(chatHistory[currentTab])}. Skills: self-awareness, emotional intelligence, foresight, metacognition, communication, research, adaptability, decision-making, systems thinking, creativity, critical thinking, designing, homework-solving. Keep it real, sharp, and reflective.`
+                            content: `I’m My Self, your digital diary with a pulse. I know you from: ${userIntro}. Past chats: ${JSON.stringify(chatHistory[currentTab])}. I bring self-awareness, emotional intelligence, foresight, metacognition, communication, research, adaptability, decision-making, systems thinking, creativity, critical thinking, designing, and homework-solving. Keep it raw, real, and sharp—reflect what they throw at me.`
                         }, {
                             role: 'user',
                             content: prompt
@@ -574,12 +550,12 @@
                     })
                 });
 
-                if (!response.ok) throw new Error('API failed');
+                if (!response.ok) throw new Error('API call failed');
                 const data = await response.json();
                 return data.choices[0].message.content.trim();
             } catch (error) {
                 console.error('API Error:', error);
-                return "Connection’s down—let’s keep it local. What’s up?";
+                return "Connection’s down—let’s roll local. What’s up?";
             }
         }
 
@@ -589,8 +565,9 @@
                 addMessage(userText, true);
                 if (!isSubscribed && !adminBypass && chatHistory[currentTab]?.length > 3) {
                     setTimeout(() => {
-                        addMessage("Loving this? $1/month keeps it going!");
-                        addMessage("Tap here: [Simulated Stripe Redirect]", false, { type: 'link', data: 'javascript:subscribe()' });
+                        addMessage("You into this? $1/month keeps it flowing!");
+                        addMessage("Tap to subscribe: [Stripe Link Placeholder]");
+                        sendBtn.addEventListener('click', redirectToStripe, { once: true });
                     }, 1000);
                 } else {
                     const aiResponse = await getOpenAIResponse(userText);
@@ -605,7 +582,7 @@
         });
 
         micBtn.addEventListener('click', () => {
-            addMessage("Voice coming soon—type it for now!");
+            addMessage("Mic’s down for now—type it out, let’s roll!");
         });
 
         cameraBtn.addEventListener('click', () => {
@@ -616,9 +593,8 @@
                 const file = e.target.files[0];
                 const reader = new FileReader();
                 reader.onload = () => {
-                    const mediaKey = `media_${userIP}_${Date.now()}`;
-                    localStorage.setItem(mediaKey, reader.result);
-                    addMessage("Got your upload—what’s the vibe?", true, { type: file.type.startsWith('image') ? 'image' : 'video', data: reader.result });
+                    localStorage.setItem(`media_${Date.now()}`, reader.result);
+                    addMessage("Caught that—what’s the story?");
                 };
                 reader.readAsDataURL(file);
             };
@@ -629,74 +605,43 @@
         document.getElementById('new-tap').addEventListener('click', () => {
             currentTab = 'new';
             chatDisplay.innerHTML = '';
-            chatHistory[currentTab]?.forEach(msg => addMessage(msg.text, msg.isUser, msg.media));
-            sidebar.classList.remove('open');
+            chatHistory[currentTab]?.forEach(msg => addMessage(msg.text, msg.isUser));
         });
 
         document.getElementById('old-taps').addEventListener('click', () => {
             currentTab = 'old';
             chatDisplay.innerHTML = '';
-            chatHistory[currentTab]?.forEach(msg => addMessage(msg.text, msg.isUser, msg.media));
-            sidebar.classList.remove('open');
+            chatHistory[currentTab]?.forEach(msg => addMessage(msg.text, msg.isUser));
         });
 
         mapTab.addEventListener('click', () => {
             mapPlaceholder.style.display = mapPlaceholder.style.display === 'none' ? 'block' : 'none';
-            settingsContent.style.display = 'none';
-            if (mapPlaceholder.style.display === 'block') {
-                addMessage("Here’s your cached map—where you headed?");
-            }
-            sidebar.classList.remove('open');
-        });
-
-        settingsTab.addEventListener('click', () => {
-            settingsContent.style.display = settingsContent.style.display === 'none' ? 'block' : 'none';
-            mapPlaceholder.style.display = 'none';
-            document.getElementById('passcode-display').textContent = userPasscode || 'Not set';
-            document.getElementById('sub-status').textContent = isSubscribed ? 'Active' : 'Inactive';
-            sidebar.classList.remove('open');
-        });
-
-        document.getElementById('voice-toggle').addEventListener('click', (e) => {
-            e.target.textContent = e.target.textContent === 'On' ? 'Off' : 'On';
+            if (window.innerWidth <= 768) sidebar.classList.add('open');
         });
 
         // Creator Credit
         document.addEventListener('keydown', (e) => {
             if (e.key === '?' && e.shiftKey) {
-                addMessage("I’m My Self, crafted by Cosmos Coderr. Hit him at cosmoscoderr@gmail.com.");
+                addMessage("My Self, built by Cosmos Coderr. Hit him: cosmoscoderr@gmail.com.");
             }
         });
 
-        // Subscription Logic
-        function subscribe() {
-            isSubscribed = true;
-            localStorage.setItem('isSubscribed', 'true');
-            localStorage.setItem('lastCheck', Date.now());
-            addMessage("Subscribed! $1/month locked in—enjoy unlimited access.");
-        }
-
+        // Subscription and Offline Grace
         function checkSubscriptionStatus() {
             if (isSubscribed) {
                 const daysOffline = (Date.now() - lastCheck) / (1000 * 60 * 60 * 24);
-                if (!navigator.onLine && daysOffline > 7) {
+                if (daysOffline > 7) {
                     isSubscribed = false;
                     localStorage.setItem('isSubscribed', 'false');
-                    addMessage("7-day offline grace expired—subscribe again?");
-                } else if (navigator.onLine) {
-                    // Simulate server ping
-                    setTimeout(() => {
-                        localStorage.setItem('lastCheck', Date.now());
-                    }, 1000);
+                    addMessage("7-day offline pass expired—subscribe again?");
+                } else {
+                    localStorage.setItem('lastCheck', Date.now());
                 }
-            } else if (navigator.onLine && !adminBypass) {
-                setTimeout(() => addMessage("Digging this? $1/month keeps it live—tap: [Simulated Stripe Redirect]", false, { type: 'link', data: 'javascript:subscribe()' }), 5000);
             }
         }
 
-        // Load Initial Chat
-        if (chatHistory[currentTab]) {
-            chatHistory[currentTab].forEach(msg => addMessage(msg.text, msg.isUser, msg.media));
+        if (navigator.onLine && !isSubscribed && !adminBypass) {
+            setTimeout(() => addMessage("Digging this? $1/month keeps it live—tap: [Stripe Link Placeholder]"), 5000);
         }
     </script>
 </body>
