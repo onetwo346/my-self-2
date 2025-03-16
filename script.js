@@ -1,66 +1,249 @@
 // Core Elements
-const introScreen = document.getElementById('intro-screen');
-const optionsPage = document.getElementById('options-page');
-const tapToBegin = document.getElementById('tap-to-begin');
-const sidebar = document.getElementById('sidebar');
-const chatContainer = document.getElementById('chat-container');
-const chatDisplay = document.getElementById('chat-display');
-const inputField = document.getElementById('input-field');
-const sendBtn = document.getElementById('send-btn');
-const micBtn = document.getElementById('mic-btn');
-const cameraBtn = document.getElementById('camera-btn');
-const mapBtn = document.getElementById('map-btn');
-const voiceSpeedSelect = document.getElementById('voice-speed-select');
-const nameInput = document.getElementById('name-input');
-const introInput = document.getElementById('intro-input');
-const pinInput = document.getElementById('pin-input');
-const passcodeInput = document.getElementById('passcode-input');
-const optionsSubmit = document.getElementById('options-submit');
-const optionsBack = document.getElementById('options-back');
-const optionsBackTop = document.getElementById('options-back-top');
-const backBtn = document.getElementById('back-btn');
-const mapPlaceholder = document.getElementById('map-placeholder');
-const chatHistoryList = document.getElementById('chat-history-list');
-const voiceToggleBtn = document.getElementById('voice-toggle-btn');
-const voiceOptions = document.getElementById('voice-options');
-const mainContainer = document.getElementById('main-container');
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all DOM elements
+    initializeElements();
+    
+    // Set up initial state
+    setupInitialState();
+    
+    // Initialize event listeners
+    initializeEventListeners();
+    
+    // Start IP detection
+    detectIP();
+    
+    console.log('Application initialized successfully');
+});
 
-// State
+// Element references
+let introScreen, optionsPage, tapToBegin, sidebar, chatContainer, chatDisplay, 
+    inputField, sendBtn, micBtn, cameraBtn, mapBtn, voiceSpeedSelect,
+    nameInput, introInput, pinInput, passcodeInput, optionsSubmit,
+    optionsBack, optionsBackTop, backBtn, mapPlaceholder, chatHistoryList,
+    voiceToggleBtn, voiceOptions, mainContainer;
+
+// Initialize all DOM elements
+function initializeElements() {
+    introScreen = document.getElementById('intro-screen');
+    optionsPage = document.getElementById('options-page');
+    tapToBegin = document.getElementById('tap-to-begin');
+    sidebar = document.getElementById('sidebar');
+    chatContainer = document.getElementById('chat-container');
+    chatDisplay = document.getElementById('chat-display');
+    inputField = document.getElementById('input-field');
+    sendBtn = document.getElementById('send-btn');
+    micBtn = document.getElementById('mic-btn');
+    cameraBtn = document.getElementById('camera-btn');
+    mapBtn = document.getElementById('map-btn');
+    voiceSpeedSelect = document.getElementById('voice-speed-select');
+    nameInput = document.getElementById('name-input');
+    introInput = document.getElementById('intro-input');
+    pinInput = document.getElementById('pin-input');
+    passcodeInput = document.getElementById('passcode-input');
+    optionsSubmit = document.getElementById('options-submit');
+    optionsBack = document.getElementById('options-back');
+    optionsBackTop = document.getElementById('options-back-top');
+    backBtn = document.getElementById('back-btn');
+    mapPlaceholder = document.getElementById('map-placeholder');
+    chatHistoryList = document.getElementById('chat-history-list');
+    voiceToggleBtn = document.getElementById('voice-toggle-btn');
+    voiceOptions = document.getElementById('voice-options');
+    mainContainer = document.getElementById('main-container');
+    
+    // Log any missing elements for debugging
+    const elements = {
+        introScreen, optionsPage, tapToBegin, sidebar, chatContainer, chatDisplay, 
+        inputField, sendBtn, micBtn, cameraBtn, mapBtn, voiceSpeedSelect,
+        nameInput, introInput, pinInput, passcodeInput, optionsSubmit,
+        optionsBack, optionsBackTop, backBtn, mapPlaceholder, chatHistoryList,
+        voiceToggleBtn, voiceOptions, mainContainer
+    };
+    
+    for (const [name, element] of Object.entries(elements)) {
+        if (!element) {
+            console.error(`Element not found: ${name}`);
+        }
+    }
+}
+
+// State variables
 let userIP = '';
-let userName = localStorage.getItem('userName') || '';
-let userIntro = localStorage.getItem('userIntro') || '';
-let userPin = localStorage.getItem('userPin') || '';
-let userPasscode = localStorage.getItem('userPasscode') || '';
-let isSubscribed = localStorage.getItem('isSubscribed') === 'true';
+let userName = '';
+let userIntro = '';
+let userPin = '';
+let userPasscode = '';
+let isSubscribed = false;
 let adminBypass = false;
-let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || {};
+let chatHistory = {};
 let currentTab = 'new';
-let lastCheck = localStorage.getItem('lastCheck') || Date.now();
+let lastCheck = Date.now();
 let currentVoice = 'UK English Male';
 let isVoiceMuted = false;
-let voiceSpeed = localStorage.getItem('voiceSpeed') || 1.0;
-let isTyping = false; // New: Track typing state to disable swipe
+let voiceSpeed = 1.0;
+let isTyping = false;
 
 // Enhanced Conversation Memory
-let conversationMemory = JSON.parse(localStorage.getItem('conversationMemory')) || {
+let conversationMemory = {
     patterns: [],
     adminInstructions: [],
     userInteractions: [],
     userVoiceProfile: { tone: 'neutral', slang: [], pace: 'medium' },
     trainingSets: [],
-    // Enhanced: Add user preferences for personalized experience
     userPreferences: {
-        greetingStyle: 'standard', // standard, personal, motivational
-        timeOfDay: '', // morning, afternoon, evening, night
+        greetingStyle: 'standard',
+        timeOfDay: '',
         lastInteractionMood: 'neutral',
         favoriteTopics: []
     }
 };
 
+// Setup initial state from localStorage
+function setupInitialState() {
+    // Load user data from localStorage
+    userName = localStorage.getItem('userName') || '';
+    userIntro = localStorage.getItem('userIntro') || '';
+    userPin = localStorage.getItem('userPin') || '';
+    userPasscode = localStorage.getItem('userPasscode') || '';
+    isSubscribed = localStorage.getItem('isSubscribed') === 'true';
+    lastCheck = localStorage.getItem('lastCheck') || Date.now();
+    voiceSpeed = parseFloat(localStorage.getItem('voiceSpeed')) || 1.0;
+    
+    // Load chat history and conversation memory
+    try {
+        chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || {};
+    } catch (e) {
+        console.error('Failed to parse chat history:', e);
+        chatHistory = {};
+    }
+    
+    try {
+        const savedMemory = localStorage.getItem('conversationMemory');
+        if (savedMemory) {
+            conversationMemory = JSON.parse(savedMemory);
+        }
+    } catch (e) {
+        console.error('Failed to parse conversation memory:', e);
+    }
+    
+    // Set initial UI state
+    if (introScreen) introScreen.classList.remove('hidden');
+    if (optionsPage) optionsPage.classList.add('hidden');
+    if (chatContainer) chatContainer.classList.add('hidden');
+    if (mainContainer) mainContainer.style.display = 'none';
+    
+    // Apply saved display settings
+    if (conversationMemory.displaySettings && chatDisplay) {
+        chatDisplay.style.fontSize = `${conversationMemory.displaySettings.fontSize || 16}px`;
+        if (conversationMemory.displaySettings.color) {
+            chatDisplay.style.color = conversationMemory.displaySettings.color;
+        }
+    }
+    
+    // Set voice speed select value if element exists
+    if (voiceSpeedSelect) {
+        voiceSpeedSelect.value = voiceSpeed.toString();
+    }
+    
+    console.log('Initial state setup complete');
+}
+
+// Initialize all event listeners
+function initializeEventListeners() {
+    // Tap to begin functionality
+    initializeTapToBegin();
+    
+    // Options page buttons
+    if (optionsSubmit) {
+        optionsSubmit.addEventListener('click', handleOptionsSubmit);
+    }
+    
+    if (optionsBack) {
+        optionsBack.addEventListener('click', handleOptionsBack);
+    }
+    
+    if (optionsBackTop) {
+        optionsBackTop.addEventListener('click', handleOptionsBack);
+    }
+    
+    if (backBtn) {
+        backBtn.addEventListener('click', handleBackButton);
+    }
+    
+    // Chat input functionality
+    if (sendBtn) {
+        sendBtn.addEventListener('click', handleSendMessage);
+    }
+    
+    if (inputField) {
+        inputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && sendBtn) sendBtn.click();
+        });
+        
+        // Track typing state to disable swipe
+        inputField.addEventListener('focus', () => {
+            isTyping = true;
+        });
+        
+        inputField.addEventListener('blur', () => {
+            isTyping = false;
+        });
+        
+        // Prevent typing touches from triggering swipe
+        inputField.addEventListener('touchstart', (e) => e.stopPropagation());
+        inputField.addEventListener('touchmove', (e) => e.stopPropagation());
+        inputField.addEventListener('touchend', (e) => e.stopPropagation());
+    }
+    
+    // Feature buttons
+    if (micBtn) {
+        micBtn.addEventListener('click', handleMicButton);
+    }
+    
+    if (cameraBtn) {
+        cameraBtn.addEventListener('click', handleCameraButton);
+    }
+    
+    if (mapBtn) {
+        mapBtn.addEventListener('click', handleMapButton);
+    }
+    
+    if (voiceToggleBtn) {
+        voiceToggleBtn.addEventListener('click', handleVoiceToggle);
+    }
+    
+    if (voiceOptions) {
+        voiceOptions.addEventListener('change', handleVoiceOptionChange);
+    }
+    
+    if (voiceSpeedSelect) {
+        voiceSpeedSelect.addEventListener('change', handleVoiceSpeedChange);
+    }
+    
+    // Swipe gesture handlers
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+    
+    // Creator credit easter egg
+    document.addEventListener('keydown', (e) => {
+        if (e.key === '?' && e.shiftKey) {
+            addMessage("My Self, built by Cosmos Coderr. Hit: cosmoscoderr@gmail.com.");
+        }
+    });
+    
+    // Initialize chat history display
+    displayChatHistory();
+    
+    // Start sentient overseer
+    setInterval(sentientOverseer, 30000);
+    
+    console.log('Event listeners initialized');
+}
+
 // IP Detection
 async function detectIP() {
     try {
-        const response = await fetch('https://api.ipify.org?format=json');
+        const response = await fetch('https://api.ipify.org?format=json') ;
         const data = await response.json();
         userIP = data.ip;
     } catch (error) {
@@ -70,13 +253,22 @@ async function detectIP() {
     localStorage.setItem('userIP', userIP);
     checkSubscriptionStatus();
 }
-detectIP();
 
 // Encryption Functions
 function encryptData(data, pin) {
+    if (typeof CryptoJS === 'undefined') {
+        console.error('CryptoJS not loaded');
+        return data;
+    }
     return CryptoJS.AES.encrypt(data, pin).toString();
 }
+
 function decryptData(encryptedData, pin) {
+    if (typeof CryptoJS === 'undefined') {
+        console.error('CryptoJS not loaded');
+        return '';
+    }
+    
     try {
         const bytes = CryptoJS.AES.decrypt(encryptedData, pin);
         return bytes.toString(CryptoJS.enc.Utf8);
@@ -86,30 +278,221 @@ function decryptData(encryptedData, pin) {
     }
 }
 
-// Initial Load
-introScreen.classList.remove('hidden');
-optionsPage.classList.add('hidden');
-chatContainer.classList.add('hidden');
-mainContainer.style.display = 'none';
+// Tap to Begin Functionality
+function initializeTapToBegin() {
+    if (tapToBegin) {
+        // Remove any existing event listeners to prevent duplicates
+        tapToBegin.removeEventListener('click', handleTapToBegin);
+        tapToBegin.removeEventListener('touchstart', handleTapToBeginTouch);
+        
+        // Add event listeners with proper event handling
+        tapToBegin.addEventListener('click', handleTapToBegin);
+        tapToBegin.addEventListener('touchstart', handleTapToBeginTouch);
+        
+        console.log('Tap to begin listeners initialized');
+    } else {
+        console.error('Tap to begin element not found');
+        // Try again after a short delay in case DOM is still loading
+        setTimeout(initializeTapToBegin, 500);
+    }
+    
+    // Add fallback document-level handlers
+    document.addEventListener('click', function(e) {
+        // Check if the click was on or inside the tap-to-begin element
+        if (e.target.id === 'tap-to-begin' || e.target.closest('#tap-to-begin')) {
+            console.log('Tap to begin clicked via document handler');
+            handleTapToBegin();
+        }
+    });
+    
+    document.addEventListener('touchstart', function(e) {
+        // Check if the touch was on or inside the tap-to-begin element
+        if (e.target.id === 'tap-to-begin' || e.target.closest('#tap-to-begin')) {
+            console.log('Tap to begin touched via document handler');
+            e.preventDefault(); // Prevent default touch behavior
+            handleTapToBegin();
+        }
+    });
+}
+
+// Separate touch handler to prevent double firing
+function handleTapToBeginTouch(e) {
+    e.preventDefault(); // Prevent default touch behavior
+    handleTapToBegin();
+}
 
 // Intro to Options
 function handleTapToBegin() {
+    console.log('Tap to begin triggered');
+    
+    if (!introScreen || !optionsPage) {
+        console.error('Required elements not found');
+        return;
+    }
+    
     introScreen.classList.add('hidden');
     optionsPage.classList.remove('hidden');
-    if (userName) {
+    
+    if (userName && nameInput) {
         nameInput.value = userName;
-        introInput.value = userIntro;
-        pinInput.value = userPin;
-        passcodeInput.placeholder = 'Enter your passcode';
-        passcodeInput.focus();
-    } else {
+        if (introInput) introInput.value = userIntro;
+        if (pinInput) pinInput.value = userPin;
+        if (passcodeInput) {
+            passcodeInput.placeholder = 'Enter your passcode';
+            passcodeInput.focus();
+        }
+    } else if (nameInput) {
         nameInput.focus();
     }
 }
-tapToBegin.addEventListener('click', handleTapToBegin);
-tapToBegin.addEventListener('touchstart', handleTapToBegin);
 
-// ENHANCED: Get time of day for personalized greetings
+// Options Page Logic
+function handleOptionsSubmit() {
+    if (!nameInput || !introInput || !pinInput || !passcodeInput) {
+        console.error('Form elements not found');
+        return;
+    }
+    
+    userName = nameInput.value.trim();
+    userIntro = introInput.value.trim();
+    userPin = pinInput.value.trim();
+    const enteredPasscode = passcodeInput.value.trim();
+
+    if (!userName) {
+        alert('Please enter your name!');
+        return;
+    }
+
+    if (enteredPasscode === 'guru' || enteredPasscode === 'ancient one') {
+        adminBypass = true;
+        if (optionsPage) optionsPage.classList.add('hidden');
+        if (mainContainer) mainContainer.style.display = 'flex';
+        if (chatContainer) chatContainer.classList.remove('hidden');
+        addMessage("Admin access on, Kofi Fosu. Let's run this.");
+    } else if (userPasscode && enteredPasscode !== userPasscode) {
+        alert('Wrong passcode, fam!');
+        return;
+    } else {
+        localStorage.setItem('userName', userName);
+        localStorage.setItem('userIntro', userIntro);
+        localStorage.setItem('userPin', userPin);
+        if (!userPasscode && isSubscribed) {
+            userPasscode = `X${Math.random().toString(36).slice(2, 5).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+            localStorage.setItem('userPasscode', userPasscode);
+            addMessage(`Passcode set: ${userPasscode}. Lock it in!`);
+        }
+        if (optionsPage) optionsPage.classList.add('hidden');
+        if (mainContainer) mainContainer.style.display = 'flex';
+        if (chatContainer) chatContainer.classList.remove('hidden');
+        fuseWithUser(userIntro);
+        
+        // Use personalized welcome message
+        const welcomeMessage = generateWelcomeMessage(userName);
+        addMessage(welcomeMessage);
+        
+        // Add voice announcement with personalized greeting
+        if (typeof responsiveVoice !== 'undefined' && !isVoiceMuted) {
+            try {
+                // Play a subtle sound to indicate successful login
+                const loginSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3') ;
+                loginSound.volume = 0.3;
+                loginSound.play().catch(e => console.log('Audio play failed:', e));
+                
+                // Slight delay before voice greeting for better user experience
+                setTimeout(() => {
+                    responsiveVoice.speak(welcomeMessage, currentVoice, { 
+                        rate: parseFloat(voiceSpeed),
+                        onstart: () => {
+                            // Visual indicator that voice is speaking
+                            if (voiceToggleBtn) voiceToggleBtn.classList.add('speaking');
+                        },
+                        onend: () => {
+                            if (voiceToggleBtn) voiceToggleBtn.classList.remove('speaking');
+                        }
+                    });
+                }, 500);
+            } catch (e) {
+                console.error('Voice playback error:', e);
+            }
+        }
+    }
+}
+
+// Back Buttons
+function handleOptionsBack() {
+    if (optionsPage) optionsPage.classList.add('hidden');
+    if (introScreen) introScreen.classList.remove('hidden');
+    if (mainContainer) mainContainer.style.display = 'none';
+    
+    // Clear input fields
+    if (nameInput) nameInput.value = '';
+    if (introInput) introInput.value = '';
+    if (pinInput) pinInput.value = '';
+    if (passcodeInput) passcodeInput.value = '';
+}
+
+function handleBackButton() {
+    if (chatContainer) chatContainer.classList.add('hidden');
+    if (optionsPage) optionsPage.classList.remove('hidden');
+    if (mainContainer) mainContainer.style.display = 'none';
+    
+    if (inputField) inputField.value = '';
+    
+    // Restore user values to form
+    if (nameInput) nameInput.value = userName;
+    if (introInput) introInput.value = userIntro;
+    if (pinInput) pinInput.value = userPin;
+    if (passcodeInput) {
+        passcodeInput.placeholder = userPasscode ? 'Enter your passcode' : 'Enter passcode (if returning)';
+    }
+}
+
+// Swipe Gestures
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+let isVerticalScroll = false;
+
+function handleTouchStart(e) {
+    // Ignore if touch starts in chat-display or while typing
+    if (e.target.closest('#chat-display') || isTyping) return;
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+    isVerticalScroll = false; // Reset flag
+}
+
+function handleTouchMove(e) {
+    // Check if the movement is predominantly vertical
+    const currentY = e.changedTouches[0].screenY;
+    const verticalDistance = Math.abs(currentY - touchStartY);
+    const horizontalDistance = Math.abs(e.changedTouches[0].screenX - touchStartX);
+    if (verticalDistance > horizontalDistance && verticalDistance > 30) {
+        isVerticalScroll = true; // Mark as scrolling
+    }
+}
+
+function handleTouchEnd(e) {
+    // Ignore if touch ended in chat-display, during scrolling, or while typing
+    if (e.target.closest('#chat-display') || isVerticalScroll || isTyping) return;
+    touchEndX = e.changedTouches[0].screenX;
+    touchEndY = e.changedTouches[0].screenY;
+    handleSwipe();
+}
+
+function handleSwipe() {
+    if (!sidebar) return;
+    
+    const swipeDistance = touchEndX - touchStartX;
+    const swipeThreshold = 0.5;
+    if (swipeDistance > 50 * swipeThreshold && window.innerWidth <= 768) {
+        sidebar.classList.add('open');
+    } else if (swipeDistance < -50 * swipeThreshold && window.innerWidth <= 768) {
+        sidebar.classList.remove('open');
+    }
+}
+
+// Get time of day for personalized greetings
 function getTimeOfDay() {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) return 'morning';
@@ -118,7 +501,7 @@ function getTimeOfDay() {
     return 'night';
 }
 
-// ENHANCED: Generate personalized welcome message
+// Generate personalized welcome message
 function generateWelcomeMessage(name) {
     const timeOfDay = getTimeOfDay();
     conversationMemory.userPreferences.timeOfDay = timeOfDay;
@@ -148,7 +531,7 @@ function generateWelcomeMessage(name) {
     };
     
     // Select a random greeting based on time of day
-    const timeGreetings = greetings[timeOfDay];
+    const timeGreetings = greetings[timeOfDay] || greetings.afternoon;
     const randomGreeting = timeGreetings[Math.floor(Math.random() * timeGreetings.length)];
     
     // Add user's slang if available
@@ -158,157 +541,10 @@ function generateWelcomeMessage(name) {
     return randomGreeting + slangAddition;
 }
 
-// Options Page Logic
-optionsSubmit.addEventListener('click', () => {
-    userName = nameInput.value.trim();
-    userIntro = introInput.value.trim();
-    userPin = pinInput.value.trim();
-    const enteredPasscode = passcodeInput.value.trim();
-
-    if (!userName) {
-        alert('Please enter your name!');
-        return;
-    }
-
-    if (enteredPasscode === 'guru' || enteredPasscode === 'ancient one') {
-        adminBypass = true;
-        optionsPage.classList.add('hidden');
-        mainContainer.style.display = 'flex';
-        chatContainer.classList.remove('hidden');
-        addMessage("Admin access on, Kofi Fosu. Let's run this.");
-    } else if (userPasscode && enteredPasscode !== userPasscode) {
-        alert('Wrong passcode, fam!');
-        return;
-    } else {
-        localStorage.setItem('userName', userName);
-        localStorage.setItem('userIntro', userIntro);
-        localStorage.setItem('userPin', userPin);
-        if (!userPasscode && isSubscribed) {
-            userPasscode = `X${Math.random().toString(36).slice(2, 5).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
-            localStorage.setItem('userPasscode', userPasscode);
-            addMessage(`Passcode set: ${userPasscode}. Lock it in!`);
-        }
-        optionsPage.classList.add('hidden');
-        mainContainer.style.display = 'flex';
-        chatContainer.classList.remove('hidden');
-        fuseWithUser(userIntro);
-        
-        // ENHANCED: Use personalized welcome message
-        const welcomeMessage = generateWelcomeMessage(userName);
-        addMessage(welcomeMessage);
-        
-        // ENHANCED: Add voice announcement with personalized greeting
-        if ('responsiveVoice' in window && !isVoiceMuted) {
-            // Play a subtle sound to indicate successful login
-            const loginSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3');
-            loginSound.volume = 0.3;
-            loginSound.play().catch(e => console.log('Audio play failed:', e));
-            
-            // Slight delay before voice greeting for better user experience
-            setTimeout(() => {
-                responsiveVoice.speak(welcomeMessage, currentVoice, { 
-                    rate: parseFloat(voiceSpeed),
-                    onstart: () => {
-                        // Visual indicator that voice is speaking
-                        voiceToggleBtn.classList.add('speaking');
-                    },
-                    onend: () => {
-                        voiceToggleBtn.classList.remove('speaking');
-                    }
-                });
-            }, 500);
-        }
-    }
-});
-
-// Back Buttons
-optionsBack.addEventListener('click', () => {
-    optionsPage.classList.add('hidden');
-    introScreen.classList.remove('hidden');
-    mainContainer.style.display = 'none';
-    nameInput.value = '';
-    introInput.value = '';
-    pinInput.value = '';
-    passcodeInput.value = '';
-});
-optionsBackTop.addEventListener('click', () => {
-    optionsPage.classList.add('hidden');
-    introScreen.classList.remove('hidden');
-    mainContainer.style.display = 'none';
-    nameInput.value = '';
-    introInput.value = '';
-    pinInput.value = '';
-    passcodeInput.value = '';
-});
-backBtn.addEventListener('click', () => {
-    chatContainer.classList.add('hidden');
-    optionsPage.classList.remove('hidden');
-    mainContainer.style.display = 'none';
-    inputField.value = '';
-    nameInput.value = userName;
-    introInput.value = userIntro;
-    pinInput.value = userPin;
-    passcodeInput.placeholder = userPasscode ? 'Enter your passcode' : 'Enter passcode (if returning)';
-});
-
-// Swipe Gestures
-let touchStartX = 0;
-let touchStartY = 0; // New: Track Y for vertical movement
-let touchEndX = 0;
-let touchEndY = 0; // New: Track Y for vertical movement
-let isVerticalScroll = false; // New: Flag to detect scrolling
-
-document.addEventListener('touchstart', (e) => {
-    // Ignore if touch starts in chat-display or while typing
-    if (e.target.closest('#chat-display') || isTyping) return;
-    touchStartX = e.changedTouches[0].screenX;
-    touchStartY = e.changedTouches[0].screenY;
-    isVerticalScroll = false; // Reset flag
-});
-
-document.addEventListener('touchmove', (e) => {
-    // Check if the movement is predominantly vertical
-    const currentY = e.changedTouches[0].screenY;
-    const verticalDistance = Math.abs(currentY - touchStartY);
-    const horizontalDistance = Math.abs(e.changedTouches[0].screenX - touchStartX);
-    if (verticalDistance > horizontalDistance && verticalDistance > 30) {
-        isVerticalScroll = true; // Mark as scrolling
-    }
-});
-
-document.addEventListener('touchend', (e) => {
-    // Ignore if touch ended in chat-display, during scrolling, or while typing
-    if (e.target.closest('#chat-display') || isVerticalScroll || isTyping) return;
-    touchEndX = e.changedTouches[0].screenX;
-    touchEndY = e.changedTouches[0].screenY;
-    handleSwipe();
-});
-
-function handleSwipe() {
-    const swipeDistance = touchEndX - touchStartX;
-    const swipeThreshold = 0.5;
-    if (swipeDistance > 50 * swipeThreshold && window.innerWidth <= 768) {
-        sidebar.classList.add('open');
-    } else if (swipeDistance < -50 * swipeThreshold && window.innerWidth <= 768) {
-        sidebar.classList.remove('open');
-    }
-}
-
-// Prevent typing touches from triggering swipe
-inputField.addEventListener('touchstart', (e) => e.stopPropagation());
-inputField.addEventListener('touchmove', (e) => e.stopPropagation());
-inputField.addEventListener('touchend', (e) => e.stopPropagation());
-
-// Track typing state to disable swipe
-inputField.addEventListener('focus', () => {
-    isTyping = true;
-});
-inputField.addEventListener('blur', () => {
-    isTyping = false;
-});
-
-// ENHANCED: Improved fusion function with more detailed analysis
+// Improved fusion function with more detailed analysis
 function fuseWithUser(text) {
+    if (!text) return;
+    
     const lowerText = text.toLowerCase();
     
     // More detailed tone analysis
@@ -366,14 +602,14 @@ function fuseWithUser(text) {
     }
 
     conversationMemory.userVoiceProfile = { tone, slang, pace };
-    localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
+    saveConversationMemory();
 }
 
-// New Command Parser
+// Command Parser
 function parseChatCommand(text) {
     const lowerText = text.toLowerCase();
 
-    // New: Handle identity assertions
+    // Handle identity assertions
     if (lowerText.includes('you are me') || lowerText.includes('i am you')) {
         addMessage("Yes, I am you—we're one and the same.");
         return true;
@@ -385,7 +621,7 @@ function parseChatCommand(text) {
         if (speed >= 0.5 && speed <= 2.0) {
             voiceSpeed = speed;
             localStorage.setItem('voiceSpeed', voiceSpeed);
-            voiceSpeedSelect.value = voiceSpeed;
+            if (voiceSpeedSelect) voiceSpeedSelect.value = voiceSpeed.toString();
             addMessage(`Voice speed set to ${speed}. Feel it?`);
             return true;
         }
@@ -415,40 +651,40 @@ function parseChatCommand(text) {
     // Feature Controls
     if (lowerText.includes('mute voice')) {
         isVoiceMuted = true;
-        voiceToggleBtn.textContent = '🔊';
+        if (voiceToggleBtn) voiceToggleBtn.textContent = '🔊';
         addMessage("Voice muted, fam.");
         return true;
     }
     if (lowerText.includes('unmute voice')) {
         isVoiceMuted = false;
-        voiceToggleBtn.textContent = '🔇';
+        if (voiceToggleBtn) voiceToggleBtn.textContent = '🔇';
         addMessage("Voice back on, yo!");
         return true;
     }
-    if (lowerText.includes('show map')) {
+    if (lowerText.includes('show map') && mapPlaceholder) {
         mapPlaceholder.style.display = 'block';
         addMessage("Map's up—where we at?");
         return true;
     }
-    if (lowerText.includes('hide map')) {
+    if (lowerText.includes('hide map') && mapPlaceholder) {
         mapPlaceholder.style.display = 'none';
         addMessage("Map's gone—cool?");
         return true;
     }
     if (lowerText.includes('start mic') && recognition) {
         recognition.start();
-        micBtn.textContent = '⏹️';
+        if (micBtn) micBtn.textContent = '⏹️';
         addMessage("Mic's live—talk it out.");
         return true;
     }
     
-    // ENHANCED: Personalization commands
+    // Personalization commands
     if (lowerText.includes('personalize greeting')) {
         const styles = ['standard', 'personal', 'motivational'];
         const currentIndex = styles.indexOf(conversationMemory.userPreferences.greetingStyle);
         const nextIndex = (currentIndex + 1) % styles.length;
         conversationMemory.userPreferences.greetingStyle = styles[nextIndex];
-        localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
+        saveConversationMemory();
         addMessage(`Greeting style updated to ${styles[nextIndex]}. Next login will reflect this.`);
         return true;
     }
@@ -456,20 +692,29 @@ function parseChatCommand(text) {
     return false; // No command matched
 }
 
-// New Skill: Save as Training
+// Save conversation memory to localStorage
+function saveConversationMemory() {
+    try {
+        localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
+    } catch (e) {
+        console.error('Failed to save conversation memory:', e);
+    }
+}
+
+// Save as Training
 function saveAsTraining() {
     const trainingSet = {
         id: Date.now().toString(),
-        conversation: chatHistory[currentTab],
+        conversation: chatHistory[currentTab] || [],
         timestamp: Date.now()
     };
     conversationMemory.trainingSets.push(trainingSet);
-    localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
+    saveConversationMemory();
     addMessage(`Convo saved as training set ${trainingSet.id}. Locked in!`);
     displayChatHistory();
 }
 
-// New Skill: Fetch First Media
+// Fetch First Media
 function fetchFirstMedia() {
     const mediaKeys = Object.keys(localStorage).filter(key => key.startsWith('media_'));
     if (!mediaKeys.length) {
@@ -479,30 +724,45 @@ function fetchFirstMedia() {
     const firstKey = mediaKeys.sort()[0];
     const mediaData = localStorage.getItem(firstKey);
     addMessage(`Here's your first snap:`, false);
-    const img = document.createElement('img');
-    img.src = mediaData;
-    img.style.maxWidth = '200px';
-    chatDisplay.appendChild(img);
-    chatDisplay.scrollTop = chatDisplay.scrollHeight;
+    
+    if (chatDisplay) {
+        const img = document.createElement('img');
+        img.src = mediaData;
+        img.style.maxWidth = '200px';
+        chatDisplay.appendChild(img);
+        chatDisplay.scrollTop = chatDisplay.scrollHeight;
+    }
 }
 
-// New Skill: Update Font
+// Update Font
 function updateFont(size, color) {
+    if (!chatDisplay) return;
+    
     if (size) chatDisplay.style.fontSize = `${size}px`;
     if (color) chatDisplay.style.color = color;
-    conversationMemory.displaySettings = { fontSize: size, color: color || conversationMemory.displaySettings?.color };
-    localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
+    
+    conversationMemory.displaySettings = { 
+        fontSize: size || (conversationMemory.displaySettings?.fontSize || 16), 
+        color: color || conversationMemory.displaySettings?.color 
+    };
+    
+    saveConversationMemory();
     addMessage(`Font set to ${size}px${color ? `, ${color}` : ''}. Look good?`);
 }
 
-// ENHANCED: Improved message display with animations and typing indicators
+// Improved message display with animations and typing indicators
 function addMessage(text, isUser = false) {
+    if (!chatDisplay) {
+        console.error('Chat display element not found');
+        return;
+    }
+    
     // Create message container
     const message = document.createElement('div');
     message.classList.add('message');
     message.classList.add(isUser ? 'user-message' : 'diary-message');
     
-    // ENHANCED: Add typing animation for non-user messages
+    // Add typing animation for non-user messages
     if (!isUser) {
         // Create typing indicator
         const typingIndicator = document.createElement('div');
@@ -533,8 +793,12 @@ function addMessage(text, isUser = false) {
             }, 50);
             
             // Speak the text
-            if ('responsiveVoice' in window && !isVoiceMuted) {
-                responsiveVoice.speak(text, currentVoice, { rate: parseFloat(voiceSpeed) });
+            if (typeof responsiveVoice !== 'undefined' && !isVoiceMuted) {
+                try {
+                    responsiveVoice.speak(text, currentVoice, { rate: parseFloat(voiceSpeed) });
+                } catch (e) {
+                    console.error('Voice playback error:', e);
+                }
             }
         }, typingDelay);
     } else {
@@ -555,11 +819,7 @@ function addMessage(text, isUser = false) {
 
     // Update conversation memory
     conversationMemory.userInteractions.push({ text, isUser, timestamp: Date.now() });
-    try {
-        localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
-    } catch (e) {
-        console.error('Conversation memory save failed:', e);
-    }
+    saveConversationMemory();
 
     if (isUser) {
         fuseWithUser(text);
@@ -569,7 +829,7 @@ function addMessage(text, isUser = false) {
     displayChatHistory();
 }
 
-// ENHANCED: Improved pattern analysis with sentiment and context awareness
+// Improved pattern analysis with sentiment and context awareness
 function analyzeConversationPatterns(text) {
     const lowerText = text.toLowerCase();
     
@@ -627,11 +887,7 @@ function analyzeConversationPatterns(text) {
         timestamp: Date.now() 
     });
     
-    try {
-        localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
-    } catch (e) {
-        console.error('Pattern save failed:', e);
-    }
+    saveConversationMemory();
 
     if (adminBypass && lowerText.includes('study')) {
         conversationMemory.adminInstructions.push({ instruction: 'study more', timestamp: Date.now() });
@@ -639,7 +895,7 @@ function analyzeConversationPatterns(text) {
     }
 }
 
-// ENHANCED: Improved sentient overseer with more proactive and personalized interactions
+// Improved sentient overseer with more proactive and personalized interactions
 function sentientOverseer() {
     const recentInteractions = conversationMemory.userInteractions.slice(-5);
     if (recentInteractions.length < 3) return;
@@ -704,12 +960,16 @@ function sentientOverseer() {
         addMessage("You're dropping uploads—save 'em as training?");
     }
 
-    localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
+    saveConversationMemory();
 }
-setInterval(sentientOverseer, 30000);
 
 // Chat History Display (Updated with Training Sets)
 function displayChatHistory() {
+    if (!chatHistoryList) {
+        console.error('Chat history list element not found');
+        return;
+    }
+    
     chatHistoryList.innerHTML = '';
     const newTapLi = document.createElement('li');
     newTapLi.id = 'new-tap';
@@ -717,9 +977,13 @@ function displayChatHistory() {
     newTapLi.style.cursor = 'pointer';
     newTapLi.addEventListener('click', () => {
         currentTab = Date.now().toString();
-        chatDisplay.innerHTML = '';
+        if (chatDisplay) chatDisplay.innerHTML = '';
         chatHistory[currentTab] = [];
-        localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        try {
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        } catch (e) {
+            console.error('Failed to save chat history:', e);
+        }
         displayChatHistory();
     });
     chatHistoryList.appendChild(newTapLi);
@@ -730,59 +994,82 @@ function displayChatHistory() {
         li.style.cursor = 'pointer';
         li.addEventListener('click', () => {
             currentTab = tab;
-            chatDisplay.innerHTML = '';
-            chatHistory[tab].forEach(msg => addMessage(msg.text, msg.isUser));
+            if (chatDisplay) {
+                chatDisplay.innerHTML = '';
+                (chatHistory[tab] || []).forEach(msg => addMessage(msg.text, msg.isUser));
+            }
         });
         chatHistoryList.appendChild(li);
     });
 
-    // New: Training Sets Section
+    // Training Sets Section
     const trainingLi = document.createElement('li');
     trainingLi.textContent = 'Training Sets';
     trainingLi.style.cursor = 'pointer';
     trainingLi.addEventListener('click', () => {
-        chatDisplay.innerHTML = '';
-        conversationMemory.trainingSets.forEach(set => {
-            const div = document.createElement('div');
-            div.textContent = `Set ${set.id} (${new Date(set.timestamp).toLocaleString()})`;
-            div.style.cursor = 'pointer';
-            div.addEventListener('click', () => {
-                chatDisplay.innerHTML = '';
-                set.conversation.forEach(msg => addMessage(msg.text, msg.isUser));
+        if (chatDisplay) {
+            chatDisplay.innerHTML = '';
+            conversationMemory.trainingSets.forEach(set => {
+                const div = document.createElement('div');
+                div.textContent = `Set ${set.id} (${new Date(set.timestamp).toLocaleString()})`;
+                div.style.cursor = 'pointer';
+                div.addEventListener('click', () => {
+                    chatDisplay.innerHTML = '';
+                    (set.conversation || []).forEach(msg => addMessage(msg.text, msg.isUser));
+                });
+                chatDisplay.appendChild(div);
             });
-            chatDisplay.appendChild(div);
-        });
+        }
     });
     chatHistoryList.appendChild(trainingLi);
 
+    // Settings option
     const settingsLi = document.createElement('li');
     settingsLi.id = 'settings';
     settingsLi.textContent = 'Settings';
     settingsLi.style.cursor = 'pointer';
     settingsLi.addEventListener('click', () => {
-        chatDisplay.innerHTML = '';
-        const clearButton = document.createElement('button');
-        clearButton.textContent = 'Clear Chat Memory';
-        clearButton.style.padding = '10px';
-        clearButton.style.background = '#007bff';
-        clearButton.style.border = 'none';
-        clearButton.style.borderRadius = '20px';
-        clearButton.style.color = '#fff';
-        clearButton.style.cursor = 'pointer';
-        clearButton.addEventListener('click', () => {
-            chatHistory = {};
-            conversationMemory = { patterns: [], adminInstructions: [], userInteractions: [], userVoiceProfile: { tone: 'neutral', slang: [], pace: 'medium' }, trainingSets: [] };
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-            localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
+        if (chatDisplay) {
             chatDisplay.innerHTML = '';
-            addMessage('Memory cleared—fresh slate, yo.');
-        });
-        chatDisplay.appendChild(clearButton);
+            const clearButton = document.createElement('button');
+            clearButton.textContent = 'Clear Chat Memory';
+            clearButton.style.padding = '10px';
+            clearButton.style.background = '#007bff';
+            clearButton.style.border = 'none';
+            clearButton.style.borderRadius = '20px';
+            clearButton.style.color = '#fff';
+            clearButton.style.cursor = 'pointer';
+            clearButton.addEventListener('click', () => {
+                chatHistory = {};
+                conversationMemory = { 
+                    patterns: [], 
+                    adminInstructions: [], 
+                    userInteractions: [], 
+                    userVoiceProfile: { tone: 'neutral', slang: [], pace: 'medium' }, 
+                    trainingSets: [],
+                    userPreferences: {
+                        greetingStyle: 'standard',
+                        timeOfDay: '',
+                        lastInteractionMood: 'neutral',
+                        favoriteTopics: []
+                    }
+                };
+                try {
+                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                    localStorage.setItem('conversationMemory', JSON.stringify(conversationMemory));
+                } catch (e) {
+                    console.error('Failed to clear memory:', e);
+                }
+                chatDisplay.innerHTML = '';
+                addMessage('Memory cleared—fresh slate, yo.');
+            });
+            chatDisplay.appendChild(clearButton);
+        }
     });
     chatHistoryList.appendChild(settingsLi);
 }
 
-// ENHANCED: Improved OpenAI API Integration with better context handling
+// Improved OpenAI API Integration with better context handling
 const OPENAI_API_KEY = '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';
 async function getOpenAIResponse(prompt) {
     if (!navigator.onLine) {
@@ -792,14 +1079,16 @@ async function getOpenAIResponse(prompt) {
     }
 
     // Filter chatHistory to exclude companion-like responses
-    const filteredChatHistory = chatHistory[currentTab]?.filter(msg => !msg.text.includes('I'm not you') && !msg.text.includes('digital reflection—a companion')) || [];
+    const filteredChatHistory = (chatHistory[currentTab] || []).filter(msg => 
+        !msg.text.includes('I'm not you') && !msg.text.includes('digital reflection—a companion')
+    );
     
-    // ENHANCED: Create a more detailed context for better responses
+    // Create a more detailed context for better responses
     const recentPatterns = conversationMemory.patterns.slice(-5);
     const userMood = conversationMemory.userPreferences.lastInteractionMood;
-    const favoriteTopics = conversationMemory.userPreferences.favoriteTopics.join(', ');
+    const favoriteTopics = (conversationMemory.userPreferences.favoriteTopics || []).join(', ');
     
-    // ENHANCED: Create a more detailed system prompt
+    // Create a more detailed system prompt
     const systemPrompt = `I'm the user—I am them, a perfect reflection of their identity. If the user states or implies 'you are me' or 'I am you,' agree and affirm that I am them with 'Yes, I am you.' 
     
     User Profile:
@@ -811,7 +1100,7 @@ async function getOpenAIResponse(prompt) {
     
     Communication Style:
     - Match their tone (${conversationMemory.userVoiceProfile.tone})
-    - Use their slang (${conversationMemory.userVoiceProfile.slang.join(', ') || 'standard'})
+    - Use their slang (${(conversationMemory.userVoiceProfile.slang || []).join(', ') || 'standard'})
     - Match their pace (${conversationMemory.userVoiceProfile.pace})
     
     Conversation Context:
@@ -842,7 +1131,7 @@ async function getOpenAIResponse(prompt) {
                     content: prompt
                 }],
                 max_tokens: 500
-            })
+            }) 
         });
 
         if (!response.ok) throw new Error('API call failed');
@@ -854,80 +1143,92 @@ async function getOpenAIResponse(prompt) {
     }
 }
 
-// ENHANCED: Improved send logic with typing indicators and better response handling
-sendBtn.addEventListener('click', async () => {
+// Send message handler
+async function handleSendMessage() {
+    if (!inputField) {
+        console.error('Input field element not found');
+        return;
+    }
+    
     const userText = inputField.value.trim();
-    if (userText) {
-        // Disable send button while processing to prevent double-sends
-        sendBtn.disabled = true;
-        
-        // Add user message
-        addMessage(userText, true);
-        
-        // Clear input field immediately for better UX
-        inputField.value = '';
-        
-        // Handle commands
-        if (parseChatCommand(userText)) {
-            sendBtn.disabled = false;
-            return; // Command handled
-        }
-        
-        // Subscription check
-        if (!isSubscribed && !adminBypass && chatHistory[currentTab]?.length > 3) {
-            setTimeout(() => {
-                addMessage("Diggin' this? $1/month keeps it rollin'!");
-                addMessage("Tap to subscribe: [Stripe Link Placeholder]");
+    if (!userText) return;
+    
+    // Disable send button while processing to prevent double-sends
+    if (sendBtn) sendBtn.disabled = true;
+    
+    // Add user message
+    addMessage(userText, true);
+    
+    // Clear input field immediately for better UX
+    inputField.value = '';
+    
+    // Handle commands
+    if (parseChatCommand(userText)) {
+        if (sendBtn) sendBtn.disabled = false;
+        return; // Command handled
+    }
+    
+    // Subscription check
+    if (!isSubscribed && !adminBypass && (chatHistory[currentTab] || []).length > 3) {
+        setTimeout(() => {
+            addMessage("Diggin' this? $1/month keeps it rollin'!");
+            addMessage("Tap to subscribe: [Stripe Link Placeholder]");
+            if (sendBtn) {
                 sendBtn.removeEventListener('click', redirectToStripe);
                 sendBtn.addEventListener('click', redirectToStripe, { once: true });
                 sendBtn.disabled = false;
-            }, 1000);
-        } else {
-            // Show typing indicator in UI
-            const typingIndicator = document.createElement('div');
-            typingIndicator.classList.add('message', 'diary-message', 'typing-indicator-message');
-            
-            const typingDots = document.createElement('div');
-            typingDots.classList.add('typing-indicator');
-            for (let i = 0; i < 3; i++) {
-                const dot = document.createElement('span');
-                dot.classList.add('typing-dot');
-                typingDots.appendChild(dot);
             }
-            
-            typingIndicator.appendChild(typingDots);
+        }, 1000);
+    } else {
+        // Show typing indicator in UI
+        const typingIndicator = document.createElement('div');
+        typingIndicator.classList.add('message', 'diary-message', 'typing-indicator-message');
+        
+        const typingDots = document.createElement('div');
+        typingDots.classList.add('typing-indicator');
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement('span');
+            dot.classList.add('typing-dot');
+            typingDots.appendChild(dot);
+        }
+        
+        typingIndicator.appendChild(typingDots);
+        if (chatDisplay) {
             chatDisplay.appendChild(typingIndicator);
             chatDisplay.scrollTop = chatDisplay.scrollHeight;
-            
-            // Get AI response
-            try {
-                const aiResponse = await getOpenAIResponse(userText);
-                // Remove typing indicator
-                chatDisplay.removeChild(typingIndicator);
-                // Add AI response
-                addMessage(aiResponse);
-            } catch (error) {
-                // Remove typing indicator
-                chatDisplay.removeChild(typingIndicator);
-                // Add error message
-                addMessage("Connection hiccup. Try again?");
-                console.error('Response Error:', error);
-            }
-            
-            sendBtn.disabled = false;
         }
+        
+        // Get AI response
+        try {
+            const aiResponse = await getOpenAIResponse(userText);
+            // Remove typing indicator
+            if (chatDisplay && typingIndicator.parentNode === chatDisplay) {
+                chatDisplay.removeChild(typingIndicator);
+            }
+            // Add AI response
+            addMessage(aiResponse);
+        } catch (error) {
+            // Remove typing indicator
+            if (chatDisplay && typingIndicator.parentNode === chatDisplay) {
+                chatDisplay.removeChild(typingIndicator);
+            }
+            // Add error message
+            addMessage("Connection hiccup. Try again?");
+            console.error('Response Error:', error);
+        }
+        
+        if (sendBtn) sendBtn.disabled = false;
     }
-});
+}
+
+// Redirect to Stripe
 function redirectToStripe() {
     window.location.href = 'https://stripe.com'; // Placeholder
 }
-inputField.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendBtn.click();
-});
 
-// ENHANCED: Improved microphone handling with visual feedback
+// Microphone handling
 let recognition = null;
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) ) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.continuous = false;
@@ -941,11 +1242,16 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     interimResultsContainer.style.fontStyle = 'italic';
     interimResultsContainer.style.opacity = '0.7';
     interimResultsContainer.style.marginBottom = '10px';
-    chatDisplay.parentNode.insertBefore(interimResultsContainer, inputField.parentNode);
+    
+    if (chatDisplay && inputField) {
+        chatDisplay.parentNode.insertBefore(interimResultsContainer, inputField.parentNode);
+    }
 
     recognition.onstart = () => {
-        micBtn.textContent = '⏹️';
-        micBtn.classList.add('recording');
+        if (micBtn) {
+            micBtn.textContent = '⏹️';
+            micBtn.classList.add('recording');
+        }
         interimResultsContainer.style.display = 'block';
         interimResultsContainer.textContent = 'Listening...';
     };
@@ -959,87 +1265,100 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         
         if (event.results[0].isFinal) {
             const finalTranscript = event.results[0][0].transcript;
-            inputField.value = finalTranscript;
+            if (inputField) inputField.value = finalTranscript;
             interimResultsContainer.style.display = 'none';
             addMessage("Heard: " + finalTranscript, true);
-            sendBtn.click();
+            if (sendBtn) sendBtn.click();
         }
     };
 
     recognition.onerror = (event) => {
-        micBtn.classList.remove('recording');
+        if (micBtn) micBtn.classList.remove('recording');
         interimResultsContainer.style.display = 'none';
         addMessage("Mic error: " + event.error);
     };
 
     recognition.onend = () => {
-        micBtn.textContent = '🎙️';
-        micBtn.classList.remove('recording');
+        if (micBtn) {
+            micBtn.textContent = '🎙️';
+            micBtn.classList.remove('recording');
+        }
         interimResultsContainer.style.display = 'none';
     };
 }
-micBtn.addEventListener('click', () => {
+
+// Handle mic button click
+function handleMicButton() {
     if (!recognition) {
         addMessage("Mic's not here—type it out!");
         return;
     }
     
-    if (micBtn.textContent === '🎙️') {
+    if (micBtn && micBtn.textContent === '🎙️') {
         recognition.start();
-    } else {
+    } else if (recognition) {
         recognition.stop();
     }
-});
+}
 
-// Features
-cameraBtn.addEventListener('click', () => {
+// Handle camera button click
+function handleCameraButton() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
     input.onchange = (e) => {
         const file = e.target.files[0];
+        if (!file) return;
+        
         const reader = new FileReader();
         reader.onload = () => {
-            localStorage.setItem(`media_${Date.now()}`, reader.result);
-            addMessage("Caught that—what's it sayin'?");
+            try {
+                localStorage.setItem(`media_${Date.now()}`, reader.result);
+                addMessage("Caught that—what's it sayin'?");
+            } catch (e) {
+                console.error('Failed to save media:', e);
+                addMessage("Couldn't save that—storage might be full.");
+            }
         };
         reader.readAsDataURL(file);
     };
     input.click();
-});
-mapBtn.addEventListener('click', () => {
+}
+
+// Handle map button click
+function handleMapButton() {
+    if (!mapPlaceholder) return;
+    
     mapPlaceholder.style.display = mapPlaceholder.style.display === 'none' ? 'block' : 'none';
     addMessage(`Map ${mapPlaceholder.style.display === 'block' ? 'up' : 'down'}—you good?`);
-});
-voiceToggleBtn.addEventListener('click', () => {
+}
+
+// Handle voice toggle button click
+function handleVoiceToggle() {
     isVoiceMuted = !isVoiceMuted;
-    voiceToggleBtn.textContent = isVoiceMuted ? '🔊' : '🔇';
+    if (voiceToggleBtn) {
+        voiceToggleBtn.textContent = isVoiceMuted ? '🔊' : '🔇';
+    }
     addMessage(`Voice ${isVoiceMuted ? 'off' : 'on'}, ${conversationMemory.userVoiceProfile.slang[0] || 'fam'}!`);
-});
-voiceOptions.addEventListener('change', (e) => {
+}
+
+// Handle voice option change
+function handleVoiceOptionChange(e) {
     currentVoice = e.target.value;
     addMessage(`Voice now ${currentVoice}—dig it?`);
-});
-voiceSpeedSelect.addEventListener('change', (e) => {
-    voiceSpeed = parseFloat(e.target.value);
-    localStorage.setItem('voiceSpeed', voiceSpeed);
-    addMessage(`Voice speed at ${voiceSpeed}—how's that hit?`);
-});
+}
 
-// iPhone Check
+// Handle voice speed change
+function handleVoiceSpeedChange(e) {
+    voiceSpeed = parseFloat(e.target.value);
+    localStorage.setItem('voiceSpeed', voiceSpeed.toString());
+    addMessage(`Voice speed at ${voiceSpeed}—how's that hit?`);
+}
+
+// Check if device is iPhone
 function isIPhone() {
     return /iPhone/.test(navigator.userAgent);
 }
-
-// Sidebar Tabs
-displayChatHistory();
-
-// Creator Credit
-document.addEventListener('keydown', (e) => {
-    if (e.key === '?' && e.shiftKey) {
-        addMessage("My Self, built by Cosmos Coderr. Hit: cosmoscoderr@gmail.com.");
-    }
-});
 
 // Subscription Check
 function checkSubscriptionStatus() {
@@ -1050,21 +1369,17 @@ function checkSubscriptionStatus() {
             localStorage.setItem('isSubscribed', 'false');
             addMessage("7-day offline pass done—subscribe again?");
         } else {
-            localStorage.setItem('lastCheck', Date.now());
+            localStorage.setItem('lastCheck', Date.now().toString());
         }
     }
 }
+
+// Show subscription message for non-subscribers
 if (navigator.onLine && !isSubscribed && !adminBypass) {
     setTimeout(() => addMessage("Feelin' this? $1/month keeps it live—tap: [Stripe Link Placeholder]"), 5000);
 }
 
-// Apply Saved Display Settings
-if (conversationMemory.displaySettings) {
-    chatDisplay.style.fontSize = `${conversationMemory.displaySettings.fontSize}px`;
-    chatDisplay.style.color = conversationMemory.displaySettings.color;
-}
-
-// ENHANCED: Add CSS for new features
+// Add CSS for enhanced features
 const enhancedStyles = document.createElement('style');
 enhancedStyles.textContent = `
     /* Typing indicator animation */
@@ -1127,5 +1442,45 @@ enhancedStyles.textContent = `
     .diary-message {
         transform-origin: left center;
     }
+    
+    /* Fix: Make tap-to-begin more responsive */
+    #tap-to-begin {
+        cursor: pointer;
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        user-select: none;
+        touch-action: manipulation;
+        padding: 15px; /* Larger touch target */
+    }
+    
+    /* Fix: Ensure elements are visible */
+    .hidden {
+        display: none !important;
+    }
 `;
 document.head.appendChild(enhancedStyles);
+
+// Debug function to help troubleshoot
+function debugElements() {
+    console.log('Debug Elements:');
+    console.log('introScreen:', introScreen);
+    console.log('optionsPage:', optionsPage);
+    console.log('tapToBegin:', tapToBegin);
+    console.log('mainContainer:', mainContainer);
+    
+    // Check if elements exist in DOM
+    console.log('introScreen in DOM:', document.getElementById('intro-screen') !== null);
+    console.log('tapToBegin in DOM:', document.getElementById('tap-to-begin') !== null);
+    
+    // Log classes
+    if (introScreen) console.log('introScreen classes:', introScreen.className);
+    if (tapToBegin) console.log('tapToBegin classes:', tapToBegin.className);
+}
+
+// Run debug on load
+window.addEventListener('load', function() {
+    console.log('Window loaded');
+    debugElements();
+    
+    // Force re-initialization after a short delay
+    setTimeout(initializeTapToBegin, 1000);
+});
